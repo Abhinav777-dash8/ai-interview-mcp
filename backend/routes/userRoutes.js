@@ -1,12 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const userController = require('../controllers/userController');
-const authMiddleware = require('../middleware/authMiddleware');
 
-router.post('/signup', userController.signup);
-router.post('/login', userController.login);
-router.post('/logout', authMiddleware, userController.logout);
-router.put('/user', authMiddleware, userController.updateUser);
-router.delete('/user', authMiddleware, userController.deleteUser);
+// Import controller functions
+const {
+  signup,
+  login,
+  logout,
+  updateUser,
+  deleteUser,
+} = require('../controllers/userController');
+
+// Import authentication middleware
+const { protect } = require('../middleware/authMiddleware');
+
+// ✅ Public Routes
+router.post('/signup', signup);       // Create new user
+router.post('/login', login);         // Authenticate user
+router.post('/logout', logout);       // Optional: Logout (client discards token)
+
+// ✅ Protected Routes (Require JWT)
+router.put('/update', protect, updateUser);     // Update user profile
+router.delete('/delete', protect, deleteUser);  // Delete user account
 
 module.exports = router;

@@ -4,39 +4,85 @@ const User = require('../models/User');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
 
+// ✅ Helper to sign a JWT token
+const generateToken = (userId) => {
+  return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '1h' });
+};
+
+// ✅ Signup
 exports.signup = async (req, res) => {
-  const { email, password, name } = req.body;
-  const hashed = await bcrypt.hash(password, 10);
-  const user = await User.create({ email, password: hashed, name });
-  res.json({ message: 'Signup successful', user });
+  try {
+    const { email, password, name } = req.body;
+
+    // Check if user exists
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ error: 'Email already in use' });
+    }
+
+    // Hash password
+    const hashed = await bcrypt.hash(password, 10);
+    const user = await User.create({ name, email, password: hashed });
+
+    // Return token
+    const token = generateToken(user._id);
+    res.status(201).json({ message: 'Signup successful', user, token });
+
+  } catch (err) {
+    console.error('[SIGNUP ERROR]', err);
+    res.status(500).json({ error: 'Signup failed' });
+  }
 };
 
+// ✅ Login
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
-  if (!user || !(await bcrypt.compare(password, user.password)))
-    return res.status(401).json({ error: 'Invalid credentials' });
+  try {
+    const { email, password } = req.body;
 
-  const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '1h' });
-  res.json({ message: 'Login successful', token });
+    const user = await User.findOne({ email });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const token = generateToken(user._id);
+    res.json({ message: 'Login successful', token });
+  } catch (err) {
+    console.error('[LOGIN ERROR]', err);
+    res.status(500).json({ error: 'Login failed' });
+  }
 };
 
+// ✅ Logout (optional logic)
 exports.logout = async (req, res) => {
-  // You can handle token blacklisting here if needed
-  res.json({ message: 'Logout successful' });
+  res.json({ message: 'Logout successful (client should discard token)' });
 };
 
+// ✅ Update User
 exports.updateUser = async (req, res) => {
-  const { name, email, password } = req.body;
-  const update = {};
-  if (name) update.name = name;
-  if (email) update.email = email;
-  if (password) update.password = await bcrypt.hash(password, 10);
-  const user = await User.findByIdAndUpdate(req.user.id, update, { new: true });
-  res.json({ message: 'User updated', user });
+  try {
+    const { name, email, password } = req.body;
+    const update = {};
+
+    if (name) update.name = name;
+    if (email) update.email = email;
+    if (password) update.password = await bcrypt.hash(password, 10);
+
+    const user = await User.findByIdAndUpdate(req.user.id, update, { new: true });
+    res.json({ message: 'User updated', user });
+
+  } catch (err) {
+    console.error('[UPDATE ERROR]', err);
+    res.status(500).json({ error: 'Failed to update user' });
+  }
 };
 
+// ✅ Delete User
 exports.deleteUser = async (req, res) => {
-  await User.findByIdAndDelete(req.user.id);
-  res.json({ message: 'User deleted' });
+  try {
+    await User.findByIdAndDelete(req.user.id);
+    res.json({ message: 'User account deleted' });
+  } catch (err) {
+    console.error('[DELETE ERROR]', err);
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
 };
