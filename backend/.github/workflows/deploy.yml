@@ -30,7 +30,7 @@ jobs:
         run: docker build -t mcp-backend .
         working-directory: ./backend
 
-      # ⬇️ OPTIONAL: Push Docker image to Docker Hub or GitHub Container Registry
+      # OPTIONAL: Push Docker image to Docker Hub or GitHub Container Registry
       # - name: 📤 Push Docker image
       #   run: |
       #     echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
