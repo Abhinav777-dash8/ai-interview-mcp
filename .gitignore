@@ -1,3 +1,0 @@
-# Exclude node_modules and environment
-node_modules/
-.env
