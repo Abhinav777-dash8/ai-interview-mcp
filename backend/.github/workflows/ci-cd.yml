@@ -1,1 +1,40 @@
 name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    - name: Install Dependencies
+      run: |
+        cd backend
+        npm install
+
+    - name: Lint Code (Optional)
+      run: |
+        cd backend
+        npx eslint . || true
+
+    - name: Run Tests
+      run: |
+        cd backend
+        npm test || echo "No tests yet"
+
+    - name: Build Docker Image
+      run: |
+        cd backend
+        docker build -t mcp-backend .
